@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { prisma } from '../../lib/prisma';
 import { requireAuth } from '../../middleware/auth';
 import { requireRole } from '../../middleware/rbac';
@@ -42,18 +40,14 @@ router.patch('/company', requireRole(...MANAGE_ADMIN), asyncHandler(async (req, 
   res.json({ settings });
 }));
 
-const logoDir = path.join(__dirname, '..', '..', '..', 'uploads', 'logo');
+// Stored as a base64 data URI directly in the database (not on local disk):
+// Render's free tier filesystem is ephemeral and wipes uploaded files on
+// every restart (which happens automatically after ~15 min idle), so a
+// disk-based upload silently breaks a few minutes after it's saved. The
+// database is the only thing on this stack that's actually persistent.
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      fs.mkdirSync(logoDir, { recursive: true });
-      cb(null, logoDir);
-    },
-    filename: (_req, file, cb) => {
-      cb(null, `logo-${Date.now()}${path.extname(file.originalname) || '.png'}`);
-    },
-  }),
-  limits: { fileSize: 3 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.mimetype)) {
       return cb(new Error('Logo must be a PNG, JPG, SVG, or WebP image'));
@@ -65,7 +59,7 @@ const upload = multer({
 router.post('/company/logo', requireRole(...MANAGE_ADMIN), upload.single('logo'), asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   await getCompanySettings();
-  const logoUrl = `/uploads/logo/${req.file.filename}`;
+  const logoUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
   const settings = await prisma.companySettings.update({ where: { id: 'default' }, data: { logoUrl } });
   res.json({ settings });
 }));
