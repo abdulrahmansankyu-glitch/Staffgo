@@ -2,9 +2,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// directUrl is a non-pooled connection used only by `prisma migrate`, which
+// needs a session-level advisory lock that Neon's pooled (PgBouncer) endpoint
+// can't hold; the app itself keeps using the pooled `url` at runtime.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============ IDENTITY / RBAC ============
