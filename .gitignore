@@ -4,5 +4,5 @@ node_modules/
 tunnel-*.sh
 cloudflare-tunnel-loop.sh
 .env
-render-logs.json
+render-logs*.json
 *.zip
