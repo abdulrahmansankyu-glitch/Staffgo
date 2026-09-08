@@ -64,11 +64,11 @@ export function Badge({ status }: { status: string }) {
   return <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-slate-100 text-slate-600'}`}>{status}</span>;
 }
 
-export function StatCard({ label, value, sub }: { label: string; value: ReactNode; sub?: string }) {
+export function StatCard({ label, value, sub, valueClassName = '' }: { label: string; value: ReactNode; sub?: string; valueClassName?: string }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5">
       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-slate-800">{value}</div>
+      <div className={`mt-2 text-2xl font-bold ${valueClassName || 'text-slate-800'}`}>{value}</div>
       {sub && <div className="mt-1 text-xs text-slate-400">{sub}</div>}
     </div>
   );

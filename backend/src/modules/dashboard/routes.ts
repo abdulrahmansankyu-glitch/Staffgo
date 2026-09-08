@@ -15,7 +15,7 @@ function countBy<T extends { status: string }>(rows: T[]): { status: string; cou
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 router.get('/summary', asyncHandler(async (_req, res) => {
-  const [invoices, bills, stocks, projects, materialRequests, quotations, clientInquiries, supplierInquiries, supplierQuotations, customerPOs] = await Promise.all([
+  const [invoices, bills, stocks, projects, materialRequests, quotations, clientInquiries, supplierInquiries, supplierQuotations, customerPOs, salesOrders, purchaseOrders] = await Promise.all([
     prisma.invoice.findMany(),
     prisma.purchaseBill.findMany(),
     prisma.itemWarehouseStock.findMany(),
@@ -26,6 +26,8 @@ router.get('/summary', asyncHandler(async (_req, res) => {
     prisma.supplierInquiry.findMany(),
     prisma.supplierQuotation.findMany(),
     prisma.customerPO.findMany(),
+    prisma.salesOrder.findMany(),
+    prisma.purchaseOrder.findMany(),
   ]);
 
   const receivables = invoices.reduce((s, i) => s + (i.total - i.amountPaid), 0);
@@ -74,6 +76,15 @@ router.get('/summary', asyncHandler(async (_req, res) => {
     customerPOsReceivedCount: customerPOs.length,
     supplierInquiriesSentCount: supplierInquiries.length,
     supplierQuotationsReceivedCount: supplierQuotations.length,
+    // Per-module category cards: total + status breakdown, one entry per pipeline stage.
+    categories: [
+      { key: 'quotations', label: 'Quotations', description: 'Quotes sent to clients, awaiting a decision or already converted.', total: quotations.length, breakdown: countBy(quotations) },
+      { key: 'salesOrders', label: 'Sales Orders', description: 'Confirmed orders moving toward delivery and invoicing.', total: salesOrders.length, breakdown: countBy(salesOrders) },
+      { key: 'invoices', label: 'Invoices', description: 'Billed to clients — tracked from sent through fully paid.', total: invoices.length, breakdown: countBy(invoices) },
+      { key: 'purchaseOrders', label: 'Purchase Orders', description: 'Orders placed with suppliers for materials and services.', total: purchaseOrders.length, breakdown: countBy(purchaseOrders) },
+      { key: 'purchaseBills', label: 'Purchase Bills', description: 'Supplier invoices received — tracked through to payment.', total: bills.length, breakdown: countBy(bills) },
+      { key: 'materialRequests', label: 'Material Requests', description: 'Site requests for stock, from submission to fulfillment.', total: materialRequests.length, breakdown: countBy(materialRequests) },
+    ],
   });
 }));
 
