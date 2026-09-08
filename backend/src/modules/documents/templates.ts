@@ -16,6 +16,7 @@ export const PDF_HEADER_TEMPLATE = `
       {{#if settings.logoUrl}}
         <img src="{{settings.logoUrl}}" style="height:9mm;" />
       {{else}}
+        <div style="font-size:11px; color:#1f6fb2; direction:rtl;">ستافغو للخدمات الصناعية</div>
         <div style="font-size:15px; font-weight:bold; color:#1f6fb2;">{{settings.name}}</div>
       {{/if}}
     </div>
@@ -48,9 +49,10 @@ const BASE_STYLE = `
   .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #dbe4ee; }
   .info-table th { background: #eef4fb; color: #1f6fb2; text-align: left; padding: 8px 10px; font-size: 12px; border: 1px solid #dbe4ee; }
   .info-table td { padding: 8px 10px; border: 1px solid #dbe4ee; font-size: 12px; }
-  .info-table td:first-child { font-weight: bold; width: 30%; background: #f7fafd; }
+  .info-table td:first-child { font-weight: bold; width: 30%; }
+  .info-table tr:nth-child(odd) td { background: #f7fafd; }
 
-  .section-heading { color: #1f6fb2; font-size: 14px; font-weight: bold; text-transform: uppercase; margin: 22px 0 4px; padding-bottom: 4px; border-bottom: 2px solid #f5a623; }
+  .section-heading { color: #1f6fb2; font-size: 14px; font-weight: bold; margin: 22px 0 4px; padding-bottom: 4px; border-bottom: 2px solid #f5a623; }
   .sub-heading { font-size: 12.5px; font-weight: bold; margin: 14px 0 4px; }
   .body-text { margin: 4px 0 8px; color: #333; }
   ul.bullet-list, ol.numbered-list { margin: 6px 0 10px; padding-left: 20px; }
@@ -63,15 +65,19 @@ const BASE_STYLE = `
   td { padding: 8px; border-bottom: 1px solid #e0e0e0; font-size: 12px; vertical-align: top; }
 
   .pricing-table th:first-child, .pricing-table td:first-child { width: 30px; text-align: center; }
+  .pricing-table th:nth-child(3), .pricing-table td:nth-child(3),
+  .pricing-table th:nth-child(4), .pricing-table td:nth-child(4) { text-align: center; }
+  .pricing-table tbody tr:nth-child(even) td { background: #f7f8fa; }
+  .pricing-table tbody tr:nth-child(even) td.amount-cell { background: #fbeecb; }
   .pricing-table .amount-cell { background: #fdf1d3; font-weight: bold; text-align: right; white-space: nowrap; }
   .line-note { color: #666; font-size: 11px; margin-top: 2px; }
   .pricing-table tfoot td { border: none; padding: 8px 10px; }
   .totals-row { background: #1f6fb2; color: #fff; font-weight: bold; }
   .totals-row td:first-child { text-align: right; }
   .totals-row td:last-child { text-align: right; width: 140px; }
-  .totals-row.grand { background: #17578f; }
 
   .escalation-table th:first-child, .escalation-table td:first-child { width: 30px; text-align: center; }
+  .escalation-table tbody tr:nth-child(even) td { background: #f7f8fa; }
 
   .totals { width: 280px; margin-left: auto; }
   .totals td { padding: 6px 8px; }
@@ -134,7 +140,7 @@ export const QUOTATION_TEMPLATE = `
 
   <h3 class="section-heading">Pricing:</h3>
   <table class="pricing-table">
-    <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th>Total Price (before VAT)</th></tr></thead>
+    <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th>Total Prices<br>(before VAT)</th></tr></thead>
     <tbody>
       {{#each lines}}
       <tr>
@@ -152,7 +158,7 @@ export const QUOTATION_TEMPLATE = `
     <tfoot>
       <tr class="totals-row"><td colspan="4">Amount Before VAT ({{settings.currency}})</td><td>{{money quotation.subtotal}}</td></tr>
       <tr class="totals-row"><td colspan="4">VAT {{settings.defaultVatRate}}%</td><td>{{money quotation.vatAmount}}</td></tr>
-      <tr class="totals-row grand"><td colspan="4">Net with VAT ({{settings.currency}})</td><td>{{money quotation.total}}</td></tr>
+      <tr class="totals-row"><td colspan="4">Net with VAT ({{settings.currency}})</td><td>{{money quotation.total}}</td></tr>
     </tfoot>
   </table>
 
