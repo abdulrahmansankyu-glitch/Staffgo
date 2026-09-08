@@ -11,17 +11,26 @@ interface NavItem {
   countKey?: string;
 }
 
-const NAV: { section: string; items: NavItem[] }[] = [
+interface NavSection {
+  section: string;
+  color: string;
+  items: NavItem[];
+}
+
+const NAV: NavSection[] = [
   {
     section: 'Overview',
+    color: '#334155', // slate
     items: [{ to: '/', label: 'Dashboard', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'] }],
   },
   {
     section: 'Follow-Ups',
+    color: '#d97706', // amber
     items: [{ to: '/follow-ups', label: 'Follow-Ups', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'] }],
   },
   {
     section: 'Sales',
+    color: '#2563eb', // blue
     items: [
       { to: '/customers', label: 'Customers', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'] },
       { to: '/client-inquiries', label: 'Client Inquiries', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'], countKey: 'clientInquiriesReceivedCount' },
@@ -34,6 +43,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Purchasing',
+    color: '#7c3aed', // violet
     items: [
       { to: '/suppliers', label: 'Suppliers', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'] },
       { to: '/supplier-inquiries', label: 'RFQs Sent', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'], countKey: 'supplierInquiriesSentCount' },
@@ -44,6 +54,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Inventory',
+    color: '#059669', // emerald
     items: [
       { to: '/items', label: 'Items', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'] },
       { to: '/warehouses', label: 'Warehouses & Sites', roles: ['ADMIN', 'ACCOUNTANT', 'SALES', 'SITE_STAFF'] },
@@ -53,10 +64,12 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Contracting',
+    color: '#4f46e5', // indigo
     items: [{ to: '/projects', label: 'Projects', roles: ['ADMIN', 'ACCOUNTANT', 'SALES'], countKey: 'activeProjects' }],
   },
   {
     section: 'Finance',
+    color: '#0d9488', // teal
     items: [
       { to: '/finance/expenses', label: 'Expenses', roles: ['ADMIN', 'ACCOUNTANT'] },
       { to: '/finance/bank', label: 'Bank & Reconciliation', roles: ['ADMIN', 'ACCOUNTANT'] },
@@ -66,6 +79,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
   {
     section: 'Admin',
+    color: '#57534e', // stone
     items: [
       { to: '/employees', label: 'Employees', roles: ['ADMIN', 'ACCOUNTANT'] },
       { to: '/contracts', label: 'Contracts', roles: ['ADMIN'] },
@@ -75,9 +89,16 @@ const NAV: { section: string; items: NavItem[] }[] = [
   },
 ];
 
+function hexToRgba(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 export function Sidebar() {
   const { user } = useAuth();
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -99,7 +120,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-slate-200 bg-white">
       <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-        <LogoMark size={32} />
+        <LogoMark size={34} />
         <div className="text-lg font-semibold text-slate-800">StaffGo</div>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -107,30 +128,51 @@ export function Sidebar() {
           const items = section.items.filter((i) => i.roles.includes(user.role));
           if (items.length === 0) return null;
           return (
-            <div key={section.section} className="mb-4">
-              <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{section.section}</div>
-              {items.map((item) => {
-                const count = item.countKey ? counts[item.countKey] : undefined;
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === '/'}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between rounded-md px-2 py-1.5 text-sm ${isActive ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <span>{item.label}</span>
-                        {count !== undefined && (
-                          <span className={`text-xs font-medium ${isActive ? 'text-slate-300' : 'text-slate-400'}`}>{count}</span>
-                        )}
-                      </>
-                    )}
-                  </NavLink>
-                );
-              })}
+            <div key={section.section} className="mb-5">
+              <div
+                className="mb-1.5 flex items-center gap-2 rounded px-2 py-1 text-xs font-bold uppercase tracking-wide"
+                style={{ color: section.color, backgroundColor: hexToRgba(section.color, 0.08) }}
+              >
+                <span className="h-1.5 w-1.5 shrink-0 rounded-sm" style={{ backgroundColor: section.color }} />
+                {section.section}
+              </div>
+              <div className="ml-[7px] space-y-0.5 border-l pl-2.5" style={{ borderColor: hexToRgba(section.color, 0.25) }}>
+                {items.map((item) => {
+                  const count = item.countKey ? counts[item.countKey] : undefined;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === '/'}
+                      onMouseEnter={() => setHovered(item.to)}
+                      onMouseLeave={() => setHovered(null)}
+                      className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-600 transition-colors"
+                      style={({ isActive }) => ({
+                        backgroundColor: isActive ? section.color : hovered === item.to ? hexToRgba(section.color, 0.08) : 'transparent',
+                        color: isActive ? '#fff' : undefined,
+                        fontWeight: isActive ? 600 : 400,
+                      })}
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <span>{item.label}</span>
+                          {count !== undefined && (
+                            <span
+                              className="rounded px-1.5 text-xs font-semibold"
+                              style={{
+                                color: isActive ? '#fff' : section.color,
+                                backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : hexToRgba(section.color, 0.1),
+                              }}
+                            >
+                              {count}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
