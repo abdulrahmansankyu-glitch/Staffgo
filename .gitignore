@@ -1,0 +1,6 @@
+node_modules/
+*.log
+*.pdf
+tunnel-*.sh
+cloudflare-tunnel-loop.sh
+.env

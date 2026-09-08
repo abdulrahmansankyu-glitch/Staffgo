@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+}
+
+.print-header {
+  display: none;
+}
+
+@media print {
+  aside, header.app-topbar {
+    display: none !important;
+  }
+  .app-shell-root, .app-shell-col, main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .print-header {
+    display: flex !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
