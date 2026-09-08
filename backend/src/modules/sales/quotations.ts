@@ -8,8 +8,9 @@ import { ALL_ROLES, MANAGE_SALES } from '../../lib/roles';
 import { nextDocumentNumber } from '../../lib/numbering';
 import { computeTotals } from './lineHelpers';
 import { renderTemplate, htmlToPdfBuffer } from '../../lib/pdf';
+import { htmlToDocxBuffer } from '../../lib/docx';
 import { generateSlug, generateToken } from '../../lib/share';
-import { QUOTATION_TEMPLATE, PDF_HEADER_TEMPLATE, PDF_FOOTER_TEMPLATE, PDF_MARGINS } from '../documents/templates';
+import { QUOTATION_TEMPLATE, QUOTATION_TEMPLATE_DOCX, PDF_HEADER_TEMPLATE, PDF_FOOTER_TEMPLATE, PDF_MARGINS } from '../documents/templates';
 import { getCompanySettings, settingsForPdf } from '../../lib/companySettings';
 import fs from 'fs';
 import path from 'path';
@@ -215,6 +216,19 @@ router.get('/:id/pdf', requireRole(...ALL_ROLES), asyncHandler(async (req, res) 
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${quotation.number}.pdf"`);
+  res.send(buffer);
+}));
+
+router.get('/:id/docx', requireRole(...ALL_ROLES), asyncHandler(async (req, res) => {
+  const quotation = await prisma.quotation.findUnique({ where: { id: req.params.id }, include: quotationInclude });
+  if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+  const settings = settingsForPdf(await getCompanySettings());
+
+  const html = renderTemplate(QUOTATION_TEMPLATE_DOCX, buildQuotationTemplateData(quotation, settings));
+  const buffer = await htmlToDocxBuffer(html);
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  res.setHeader('Content-Disposition', `attachment; filename="${quotation.number}.docx"`);
   res.send(buffer);
 }));
 

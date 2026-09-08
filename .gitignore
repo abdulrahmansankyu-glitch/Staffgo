@@ -6,3 +6,4 @@ cloudflare-tunnel-loop.sh
 .env
 render-logs*.json
 *.zip
+*.docx

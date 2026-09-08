@@ -35,9 +35,9 @@ const BASE_STYLE = `
 <style>
   * { box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; color: #262626; font-size: 12px; line-height: 1.5; }
-  .doc-meta { color: #666; font-size: 12px; margin-bottom: 14px; }
+  .doc-meta { color: #666; font-size: 12px; margin-bottom: 14px; text-align: center; }
   .project-title { font-size: 19px; font-weight: bold; color: #1f6fb2; text-transform: uppercase; margin: 0 0 14px; }
-  .client-name { font-size: 15px; font-weight: bold; color: #262626; margin: 0 0 16px; }
+  .client-name { font-size: 15px; font-weight: bold; color: #262626; margin: 0 0 16px; text-align: center; }
   .doc-title { font-size: 20px; font-weight: bold; text-align: right; color: #1f6fb2; }
   .doc-number { text-align: right; color: #555; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1f6fb2; padding-bottom: 12px; margin-bottom: 20px; }
@@ -67,12 +67,11 @@ const BASE_STYLE = `
   .pricing-table th:first-child, .pricing-table td:first-child { width: 30px; text-align: center; }
   .pricing-table th:nth-child(3), .pricing-table td:nth-child(3),
   .pricing-table th:nth-child(4), .pricing-table td:nth-child(4) { text-align: center; }
-  .pricing-table tbody tr:nth-child(even) td { background: #f7f8fa; }
-  .pricing-table tbody tr:nth-child(even) td.amount-cell { background: #fbeecb; }
+  .pricing-table tbody.items tr:nth-child(even) td { background: #f7f8fa; }
+  .pricing-table tbody.items tr:nth-child(even) td.amount-cell { background: #fbeecb; }
   .pricing-table .amount-cell { background: #fdf1d3; font-weight: bold; text-align: right; white-space: nowrap; }
   .line-note { color: #666; font-size: 11px; margin-top: 2px; }
-  .pricing-table tfoot td { border: none; padding: 8px 10px; }
-  .totals-row { background: #1f6fb2; color: #fff; font-weight: bold; }
+  .pricing-table .totals-row td { background: #1f6fb2; color: #fff; font-weight: bold; border: none; padding: 8px 10px; }
   .totals-row td:first-child { text-align: right; }
   .totals-row td:last-child { text-align: right; width: 140px; }
 
@@ -87,8 +86,11 @@ const BASE_STYLE = `
 </style>
 `;
 
-export const QUOTATION_TEMPLATE = `
-<html><head>${BASE_STYLE}</head><body>
+// Shared by both the Puppeteer PDF (header/footer come from PDF_HEADER_TEMPLATE
+// / PDF_FOOTER_TEMPLATE as repeating page chrome) and the Word export (which
+// has no equivalent "repeating chrome" concept, so its wrapper inlines the
+// branding block once at the top instead — see QUOTATION_TEMPLATE_DOCX below).
+const QUOTATION_BODY = `
   <div class="doc-meta">Quote No.: {{quotation.number}} | Date: {{date quotation.date}}</div>
   {{#if quotation.projectTitle}}<h1 class="project-title">{{quotation.projectTitle}}</h1>{{/if}}
   <h2 class="client-name">{{customer.name}}</h2>
@@ -141,7 +143,7 @@ export const QUOTATION_TEMPLATE = `
   <h3 class="section-heading">Pricing:</h3>
   <table class="pricing-table">
     <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th>Total Prices<br>(before VAT)</th></tr></thead>
-    <tbody>
+    <tbody class="items">
       {{#each lines}}
       <tr>
         <td>{{inc @index}}</td>
@@ -155,11 +157,11 @@ export const QUOTATION_TEMPLATE = `
       </tr>
       {{/each}}
     </tbody>
-    <tfoot>
+    <tbody>
       <tr class="totals-row"><td colspan="4">Amount Before VAT ({{settings.currency}})</td><td>{{money quotation.subtotal}}</td></tr>
       <tr class="totals-row"><td colspan="4">VAT {{settings.defaultVatRate}}%</td><td>{{money quotation.vatAmount}}</td></tr>
       <tr class="totals-row"><td colspan="4">Net with VAT ({{settings.currency}})</td><td>{{money quotation.total}}</td></tr>
-    </tfoot>
+    </tbody>
   </table>
 
   {{#if escalationLines.length}}
@@ -188,6 +190,34 @@ export const QUOTATION_TEMPLATE = `
       {{#each paymentTermsItems}}<li>{{#if label}}<strong>{{label}}</strong>{{else}}{{text}}{{/if}}</li>{{/each}}
     </ul>
   {{/if}}
+`;
+
+export const QUOTATION_TEMPLATE = `
+<html><head>${BASE_STYLE}</head><body>
+${QUOTATION_BODY}
+</body></html>
+`;
+
+// Word export: no page-chrome mechanism like Puppeteer's header/footer, so the
+// branding block is inlined once at the top of the document instead.
+export const QUOTATION_TEMPLATE_DOCX = `
+<html><head>${BASE_STYLE}</head><body>
+  <table style="width:100%; border:none; margin-bottom:4px;"><tr>
+    <td style="border:none; font-size:9px; line-height:1.6; color:#444; vertical-align:top;">
+      {{settings.addressLine}}<br>CR No.: {{settings.crNumber}}<br>VAT No.: {{settings.vatNumber}}<br>Phone No.: {{settings.phone}}
+    </td>
+    <td style="border:none; text-align:right; vertical-align:top;">
+      {{#if settings.logoUrl}}
+        <img src="{{settings.logoUrl}}" style="height:40px;" />
+      {{else}}
+        <div style="font-size:10px; color:#1f6fb2;">ستافغو للخدمات الصناعية</div>
+        <div style="font-size:16px; font-weight:bold; color:#1f6fb2;">{{settings.name}}</div>
+      {{/if}}
+    </td>
+  </tr></table>
+  <div style="height:3px; background:#f5a623; margin-bottom:20px;"></div>
+${QUOTATION_BODY}
+  <div style="margin-top:20px; padding-top:10px; border-top:1px solid #e0e0e0; text-align:center; font-size:10px; color:#888;">Powered by StaffGo</div>
 </body></html>
 `;
 

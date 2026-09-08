@@ -29,6 +29,16 @@ export function ItemsPage() {
     load();
   }
 
+  async function handleDelete(item: any) {
+    if (!window.confirm(`Delete "${item.name}"? This can't be undone.`)) return;
+    try {
+      await api.delete(`/items/${item.id}`);
+      load();
+    } catch (err: any) {
+      alert(err.response?.data?.error ?? 'Could not delete this item.');
+    }
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -60,6 +70,7 @@ export function ItemsPage() {
           { header: 'Category', render: (i) => i.category ?? '-' },
           { header: 'Base Unit', render: (i) => i.baseUnit },
           { header: 'Other Units', render: (i) => i.units?.map((u: any) => `${u.unitName} (${u.conversionFactorToBase}x)`).join(', ') || '-' },
+          { header: '', render: (i) => <Button variant="danger" onClick={() => handleDelete(i)}>Delete</Button> },
         ]}
       />
     </div>

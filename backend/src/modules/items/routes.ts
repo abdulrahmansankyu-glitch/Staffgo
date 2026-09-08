@@ -57,6 +57,35 @@ router.patch('/:id', requireRole(...MANAGE_SALES), asyncHandler(async (req, res)
   res.json({ item });
 }));
 
+router.delete('/:id', requireRole(...MANAGE_SALES), asyncHandler(async (req, res) => {
+  const id = req.params.id;
+  const item = await prisma.item.findUnique({ where: { id } });
+  if (!item) return res.status(404).json({ error: 'Item not found' });
+
+  // Block deletion if the item has any real transactional history — only
+  // unused items (never quoted, ordered, delivered, or stocked) can be removed.
+  const [rateHistory, qLines, soLines, invLines, dnLines, poLines, pbLines, mrLines, stockEntries, stocks] = await Promise.all([
+    prisma.supplierRateHistory.count({ where: { itemId: id } }),
+    prisma.quotationLine.count({ where: { itemId: id } }),
+    prisma.salesOrderLine.count({ where: { itemId: id } }),
+    prisma.invoiceLine.count({ where: { itemId: id } }),
+    prisma.deliveryNoteLine.count({ where: { itemId: id } }),
+    prisma.purchaseOrderLine.count({ where: { itemId: id } }),
+    prisma.purchaseBillLine.count({ where: { itemId: id } }),
+    prisma.materialRequestLine.count({ where: { itemId: id } }),
+    prisma.stockLedgerEntry.count({ where: { itemId: id } }),
+    prisma.itemWarehouseStock.count({ where: { itemId: id } }),
+  ]);
+  const inUse = rateHistory + qLines + soLines + invLines + dnLines + poLines + pbLines + mrLines + stockEntries + stocks;
+  if (inUse > 0) {
+    return res.status(409).json({ error: 'This item is used in existing quotations, orders, invoices, or stock records and cannot be deleted.' });
+  }
+
+  await prisma.itemUnit.deleteMany({ where: { itemId: id } });
+  await prisma.item.delete({ where: { id } });
+  res.json({ ok: true });
+}));
+
 router.post('/import', requireRole(...MANAGE_SALES), asyncHandler(async (req, res) => {
   const schema = z.object({ rows: z.array(z.record(z.string())) });
   const { rows } = schema.parse(req.body);

@@ -47,6 +47,7 @@ export function QuotationDetailPage() {
         <div className="flex items-center gap-2">
           <Badge status={quotation.status} />
           <a href={`${apiOrigin}/api/v1/quotations/${id}/pdf`} target="_blank" rel="noreferrer"><Button variant="secondary">Download PDF</Button></a>
+          <a href={`${apiOrigin}/api/v1/quotations/${id}/docx`}><Button variant="secondary">Download Word</Button></a>
           {canManage && <Button variant="secondary" onClick={handleShare}>Get Share Link</Button>}
           {canManage && <Link to={`/quotations/${id}/edit`}><Button variant="secondary">Edit</Button></Link>}
           {canManage && quotation.status !== 'CONVERTED' && <Button onClick={handleConvert} disabled={busy}>Convert to Sales Order</Button>}
